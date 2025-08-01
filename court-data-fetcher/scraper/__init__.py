@@ -1,0 +1,1 @@
+# Scraper package for court data fetcher 

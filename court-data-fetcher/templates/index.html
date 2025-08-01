@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Court Data Fetcher - Delhi High Court</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div class="title-section">
+                    <h1 class="title">Court Data Fetcher</h1>
+                    <p class="subtitle">Delhi High Court Case Information System</p>
+                    <div class="status-indicator">
+                        <span class="status-dot"></span>
+                        <span class="status-text">System Online</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="search-section">
+                <div class="search-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-search"></i> Search Court Cases</h2>
+                        <p class="card-subtitle">Enter case details to retrieve information</p>
+                    </div>
+                    
+                    <form id="searchForm" class="search-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="caseType">
+                                    <i class="fas fa-gavel"></i> Case Type
+                                </label>
+                                <select id="caseType" name="caseType" class="form-select" required>
+                                    <option value="">Select Case Type</option>
+                                    <option value="W.P.(C)">Writ Petition (Civil) - W.P.(C)</option>
+                                    <option value="W.P.(CRL)">Writ Petition (Criminal) - W.P.(CRL)</option>
+                                    <option value="LPA">Letters Patent Appeal - LPA</option>
+                                    <option value="FAO">First Appeal from Order - FAO</option>
+                                    <option value="RFA">Regular First Appeal - RFA</option>
+                                    <option value="CRL.A.">Criminal Appeal - CRL.A.</option>
+                                    <option value="C.M.(M)">Civil Miscellaneous (Main) - C.M.(M)</option>
+                                    <option value="C.M.(W)">Civil Miscellaneous (Writ) - C.M.(W)</option>
+                                    <option value="C.R.P.">Civil Revision Petition - C.R.P.</option>
+                                    <option value="O.A.">Original Application - O.A.</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="caseNumber">
+                                    <i class="fas fa-hashtag"></i> Case Number
+                                </label>
+                                <input type="text" id="caseNumber" name="caseNumber" placeholder="e.g., 1234" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="filingYear">
+                                    <i class="fas fa-calendar"></i> Filing Year
+                                </label>
+                                <select id="filingYear" name="filingYear" class="form-select" required>
+                                    <option value="">Select Year</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                    <option value="2022">2022</option>
+                                    <option value="2021">2021</option>
+                                    <option value="2020">2020</option>
+                                    <option value="2019">2019</option>
+                                    <option value="2018">2018</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="partyName">
+                                    <i class="fas fa-user"></i> Party Name (Optional)
+                                </label>
+                                <input type="text" id="partyName" name="partyName" placeholder="e.g., John Doe">
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="searchBtn">
+                                <i class="fas fa-search"></i>
+                                <span class="btn-text">Search Cases</span>
+                                <span class="btn-loading" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin"></i> Searching...
+                                </span>
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                                <i class="fas fa-eraser"></i> Clear
+                            </button>
+                            <button type="button" class="btn btn-info" onclick="showQuickDemo()">
+                                <i class="fas fa-play"></i> Quick Demo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-header">
+                    <h2><i class="fas fa-list"></i> Search Results</h2>
+                    <div class="results-count" id="resultsCount"></div>
+                    <div class="results-actions">
+                        <button class="btn btn-sm btn-outline" onclick="exportResults()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="loading" id="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Searching Delhi High Court database...</p>
+                    <div class="loading-steps">
+                        <div class="step">Connecting to court server</div>
+                        <div class="step">Retrieving case data</div>
+                        <div class="step">Processing results</div>
+                    </div>
+                </div>
+                
+                <div class="error-message" id="errorMessage" style="display: none;"></div>
+                
+                <div class="cases-grid" id="casesGrid"></div>
+            </div>
+
+            <div class="features-section" id="featuresSection">
+                <h3><i class="fas fa-star"></i> Key Features</h3>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <i class="fas fa-database"></i>
+                        <h4>Real-time Search</h4>
+                        <p>Instant access to Delhi High Court case database</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-shield-alt"></i>
+                        <h4>Secure Access</h4>
+                        <p>Encrypted connections and data protection</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-mobile-alt"></i>
+                        <h4>Mobile Friendly</h4>
+                        <p>Responsive design works on all devices</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-history"></i>
+                        <h4>Search History</h4>
+                        <p>Track and review previous searches</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Case Details Modal -->
+        <div class="modal" id="caseModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle"><i class="fas fa-file-alt"></i> Case Details</h3>
+                    <button class="modal-close" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Case details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="downloadCasePDF()">
+                        <i class="fas fa-download"></i> Download PDF
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Demo Modal -->
+        <div class="modal" id="demoModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-play-circle"></i> Quick Demo</h3>
+                    <button class="modal-close" onclick="closeDemoModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>This demo will show you how the system works with sample data:</p>
+                    <div class="demo-steps">
+                        <div class="demo-step">
+                            <span class="step-number">1</span>
+                            <span>Select Case Type: W.P.(C)</span>
+                        </div>
+                        <div class="demo-step">
+                            <span class="step-number">2</span>
+                            <span>Enter Case Number: 1040</span>
+                        </div>
+                        <div class="demo-step">
+                            <span class="step-number">3</span>
+                            <span>Select Year: 2023</span>
+                        </div>
+                        <div class="demo-step">
+                            <span class="step-number">4</span>
+                            <span>Click Search to see results</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="runDemo()">
+                        <i class="fas fa-play"></i> Run Demo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced JavaScript with better interactivity
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            searchCases();
+        });
+
+        // Add form field animations
+        document.querySelectorAll('.form-group input, .form-group select').forEach(field => {
+            field.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            field.addEventListener('blur', function() {
+                if (!this.value) {
+                    this.parentElement.classList.remove('focused');
+                }
+            });
+        });
+
+        function searchCases() {
+            const caseType = document.getElementById('caseType').value.trim();
+            const caseNumber = document.getElementById('caseNumber').value.trim();
+            const filingYear = document.getElementById('filingYear').value.trim();
+            const partyName = document.getElementById('partyName').value.trim();
+            
+            if (!caseType || !caseNumber || !filingYear) {
+                showError('Please fill in all required fields: Case Type, Case Number, and Filing Year');
+                return;
+            }
+
+            showLoading();
+            hideError();
+
+            // Simulate API call with enhanced UX
+            setTimeout(() => {
+                fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        case_type: caseType,
+                        case_number: caseNumber,
+                        filing_year: filingYear,
+                        party_name: partyName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (data.error) {
+                        showError(data.error);
+                    } else {
+                        displayResults(data.cases);
+                        showSuccessMessage(`Found ${data.cases.length} case(s)`);
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showError('An error occurred while searching. Please try again.');
+                    console.error('Error:', error);
+                });
+            }, 1500); // Simulate realistic search time
+        }
+
+        function displayResults(cases) {
+            const resultsSection = document.getElementById('resultsSection');
+            const casesGrid = document.getElementById('casesGrid');
+            const resultsCount = document.getElementById('resultsCount');
+
+            resultsSection.style.display = 'block';
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+            
+            if (cases.length === 0) {
+                resultsCount.innerHTML = '<i class="fas fa-info-circle"></i> No cases found';
+                casesGrid.innerHTML = '<div class="no-results"><i class="fas fa-search"></i><p>No cases found matching your search criteria.</p></div>';
+                return;
+            }
+
+            resultsCount.innerHTML = `<i class="fas fa-check-circle"></i> ${cases.length} case(s) found`;
+            
+            casesGrid.innerHTML = cases.map((caseItem, index) => `
+                <div class="case-card" onclick="showCaseDetails('${caseItem.case_number}')" style="animation-delay: ${index * 0.1}s">
+                    <div class="case-header">
+                        <h3 class="case-number">${caseItem.case_number}</h3>
+                        <span class="case-status ${getStatusClass(caseItem.status)}">
+                            <i class="fas fa-circle"></i> ${caseItem.status}
+                        </span>
+                    </div>
+                    <div class="case-details">
+                        <div class="case-party">
+                            <i class="fas fa-user"></i> <strong>Petitioner:</strong> ${caseItem.petitioner || 'N/A'}
+                        </div>
+                        <div class="case-party">
+                            <i class="fas fa-user-tie"></i> <strong>Respondent:</strong> ${caseItem.respondent || 'N/A'}
+                        </div>
+                        <div class="case-info">
+                            <span><i class="fas fa-building"></i> <strong>Court:</strong> ${caseItem.court}</span>
+                            <span><i class="fas fa-calendar"></i> <strong>Filing Date:</strong> ${caseItem.filing_date || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div class="case-actions">
+                        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); showCaseDetails('${caseItem.case_number}')">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showCaseDetails(caseNumber) {
+            // Enhanced case details with better formatting
+            const mockCaseData = {
+                'W.P.(C) 1040/2023': {
+                    case_number: 'W.P.(C) 1040/2023',
+                    petitioner: 'Reliance Industries Limited',
+                    respondent: 'Union of India & Ors.',
+                    filing_date: '15 March 2023',
+                    status: 'Pending',
+                    court: 'Delhi High Court',
+                    case_type: 'Writ Petition (Civil)',
+                    judge: 'Hon\'ble Mr. Justice Rajiv Shakdher',
+                    next_hearing: '15 January 2024',
+                    case_summary: 'This writ petition challenges the constitutional validity of certain provisions of the Income Tax Act, 1961.'
+                }
+            };
+
+            const caseData = mockCaseData[caseNumber] || {
+                case_number: caseNumber,
+                petitioner: 'Sample Petitioner',
+                respondent: 'Sample Respondent',
+                filing_date: 'Sample Date',
+                status: 'Pending',
+                court: 'Delhi High Court',
+                case_type: 'Sample Type',
+                judge: 'Sample Judge',
+                next_hearing: 'Sample Date'
+            };
+
+            const modal = document.getElementById('caseModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.innerHTML = `<i class="fas fa-file-alt"></i> Case: ${caseData.case_number}`;
+            
+            modalBody.innerHTML = `
+                <div class="case-detail-grid">
+                    <div class="detail-item">
+                        <label><i class="fas fa-hashtag"></i> Case Number:</label>
+                        <span>${caseData.case_number}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-user"></i> Petitioner:</label>
+                        <span>${caseData.petitioner}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-user-tie"></i> Respondent:</label>
+                        <span>${caseData.respondent}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-calendar"></i> Filing Date:</label>
+                        <span>${caseData.filing_date}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-info-circle"></i> Status:</label>
+                        <span class="status-badge ${getStatusClass(caseData.status)}">
+                            <i class="fas fa-circle"></i> ${caseData.status}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-building"></i> Court:</label>
+                        <span>${caseData.court}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-gavel"></i> Case Type:</label>
+                        <span>${caseData.case_type}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-user-graduate"></i> Judge:</label>
+                        <span>${caseData.judge}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label><i class="fas fa-clock"></i> Next Hearing:</label>
+                        <span>${caseData.next_hearing || 'Not scheduled'}</span>
+                    </div>
+                    ${caseData.case_summary ? `
+                    <div class="detail-item full-width">
+                        <label><i class="fas fa-align-left"></i> Case Summary:</label>
+                        <span>${caseData.case_summary}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            modal.style.display = 'block';
+        }
+
+        function showQuickDemo() {
+            document.getElementById('demoModal').style.display = 'block';
+        }
+
+        function closeDemoModal() {
+            document.getElementById('demoModal').style.display = 'none';
+        }
+
+        function runDemo() {
+            closeDemoModal();
+            
+            // Auto-fill the form with demo data
+            document.getElementById('caseType').value = 'W.P.(C)';
+            document.getElementById('caseNumber').value = '1040';
+            document.getElementById('filingYear').value = '2023';
+            document.getElementById('partyName').value = '';
+            
+            // Trigger search
+            searchCases();
+        }
+
+        function showSuccessMessage(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        function exportResults() {
+            // Simulate export functionality
+            showSuccessMessage('Export feature coming soon!');
+        }
+
+        function downloadCasePDF() {
+            showSuccessMessage('PDF download feature coming soon!');
+        }
+
+        function clearForm() {
+            document.getElementById('searchForm').reset();
+            document.getElementById('resultsSection').style.display = 'none';
+            hideError();
+            showSuccessMessage('Form cleared successfully');
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('searchBtn').disabled = true;
+            document.querySelector('.btn-text').style.display = 'none';
+            document.querySelector('.btn-loading').style.display = 'inline';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('searchBtn').disabled = false;
+            document.querySelector('.btn-text').style.display = 'inline';
+            document.querySelector('.btn-loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            errorElement.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function closeModal() {
+            document.getElementById('caseModal').style.display = 'none';
+        }
+
+        function getStatusClass(status) {
+            if (!status) return 'status-unknown';
+            
+            const statusLower = status.toLowerCase();
+            if (statusLower.includes('pending') || statusLower.includes('active')) return 'status-pending';
+            if (statusLower.includes('disposed') || statusLower.includes('closed')) return 'status-disposed';
+            if (statusLower.includes('dismissed')) return 'status-dismissed';
+            return 'status-unknown';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('caseModal');
+            const demoModal = document.getElementById('demoModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+            if (event.target === demoModal) {
+                closeDemoModal();
+            }
+        }
+
+        // Add some interactive animations on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate header on load
+            document.querySelector('.header').classList.add('animate-in');
+            
+            // Add hover effects to feature cards
+            document.querySelectorAll('.feature-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
